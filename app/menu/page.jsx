@@ -6,6 +6,16 @@ import { fetchDishesServer } from "@/lib/server-dishes";
 export const metadata = {
   title: "Menu",
   description: "Explore our Ethiopian dishes and familiar favourites.",
+  openGraph: {
+    title: "Menu | Addis Eats",
+    description: "Explore our Ethiopian dishes and familiar favourites.",
+    siteName: "Addis Eats",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Menu | Addis Eats",
+    description: "Explore our Ethiopian dishes and familiar favourites.",
+  }
 };
 
 export default async function MenuPage() {
