@@ -18,7 +18,6 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: dish.name,
       description: dish.description,
-      url: `/menu/${resolvedParams.slug}`,
       siteName: "Addis Eats",
       images: [
         {

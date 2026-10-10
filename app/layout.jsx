@@ -20,13 +20,6 @@ const mono = DM_Mono({
 });
 
 export const metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL
-      ? process.env.NEXT_PUBLIC_BASE_URL
-      : process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000"
-  ),
   title: {
     template: "%s | Addis Eats",
     default: "Addis Eats | Authentic Ethiopian Food Delivery",
@@ -36,7 +29,6 @@ export const metadata = {
   openGraph: {
     title: "Addis Eats",
     description: "Thoughtful Ethiopian dishes, delivered across Addis.",
-    url: "/",
     siteName: "Addis Eats",
     images: [
       {
@@ -54,10 +46,7 @@ export const metadata = {
     title: "Addis Eats",
     description: "Thoughtful Ethiopian dishes, delivered across Addis.",
     images: ["https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&h=630&q=90"],
-  },
-  alternates: {
-    canonical: "/",
-  },
+  }
 };
 
 export default function RootLayout({ children }) {
