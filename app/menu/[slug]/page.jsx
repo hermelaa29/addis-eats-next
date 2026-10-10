@@ -19,6 +19,12 @@ export async function generateMetadata({ params }) {
       title: dish.name,
       description: dish.description,
       images: [dish.image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: dish.name,
+      description: dish.description,
+      images: [dish.image],
     }
   };
 }

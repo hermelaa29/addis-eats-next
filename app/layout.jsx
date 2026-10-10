@@ -34,6 +34,14 @@ export const metadata = {
     description: "Thoughtful Ethiopian dishes, delivered across Addis.",
     url: "/",
     siteName: "Addis Eats",
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&h=630&q=90",
+        width: 1200,
+        height: 630,
+        alt: "Addis Eats - Authentic Ethiopian Food",
+      }
+    ],
     locale: "en_ET",
     type: "website",
   },
@@ -41,6 +49,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Addis Eats",
     description: "Thoughtful Ethiopian dishes, delivered across Addis.",
+    images: ["https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&h=630&q=90"],
   },
   alternates: {
     canonical: "/",
