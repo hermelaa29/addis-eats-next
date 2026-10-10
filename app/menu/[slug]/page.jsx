@@ -18,7 +18,17 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: dish.name,
       description: dish.description,
-      images: [dish.image],
+      url: `/menu/${resolvedParams.slug}`,
+      siteName: "Addis Eats",
+      images: [
+        {
+          url: dish.image,
+          width: 1200,
+          height: 630,
+          alt: dish.name,
+        }
+      ],
+      type: "website",
     },
     twitter: {
       card: "summary_large_image",
