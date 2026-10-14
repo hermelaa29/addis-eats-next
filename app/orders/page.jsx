@@ -9,23 +9,34 @@ import { useRequireAuth } from "@/lib/useRequireAuth";
 import useSWR from "swr";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  formatCurrency,
+  formatDateTime,
+  formatOrderStatus,
+  formatAddress,
+} from "@/lib/formatters";
+import { downloadOrdersCSV } from "@/lib/csvExport";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function OrdersPage() {
   const { isReady } = useRequireAuth("/orders");
   const initialOrders = useOrdersStore((state) => state.orders);
-  
-  const { data: orders } = useSWR('orders-live', () => {
-    if (typeof window !== "undefined") {
-      const parsed = JSON.parse(localStorage.getItem("addis-eats-orders"));
-      return Array.isArray(parsed) ? parsed : [];
+
+  const { data: orders = [] } = useSWR(
+    'orders-live',
+    () => {
+      if (typeof window !== "undefined") {
+        const parsed = JSON.parse(localStorage.getItem("addis-eats-orders"));
+        return Array.isArray(parsed) ? parsed : [];
+      }
+      return [];
+    },
+    {
+      fallbackData: initialOrders,
+      revalidateOnFocus: false,
     }
-    return [];
-  }, {
-    fallbackData: initialOrders,
-    refreshInterval: 1000
-  });
+  );
 
   const addItem = useCartStore((state) => state.addItem);
   const showToast = useToastStore((state) => state.showToast);
@@ -68,7 +79,7 @@ export default function OrdersPage() {
   }, [isReady, orders.length]);
 
   if (!isReady) return null;
-  
+
   const reorder = (order) => {
     order.items.forEach(({ dish, quantity }) => {
       Array.from({ length: quantity }).forEach(() => addItem(dish));
@@ -76,16 +87,41 @@ export default function OrdersPage() {
     showToast("Added previous order to cart");
   };
 
-  const activeOrders = orders.filter((o) => o.status !== "Delivered" && o.status !== "Completed");
-  const pastOrders = orders.filter((o) => o.status === "Delivered" || o.status === "Completed");
+  const handleExportCSV = () => {
+    downloadOrdersCSV(orders, `addis-eats-my-orders-${new Date().toISOString().slice(0, 10)}.csv`);
+    showToast("Order history exported as CSV");
+  };
+
+  const activeOrders = orders.filter(
+    (o) => o.status !== "Delivered" && o.status !== "Completed" && o.status !== "Cancelled"
+  );
+  const pastOrders = orders.filter(
+    (o) => o.status === "Delivered" || o.status === "Completed" || o.status === "Cancelled"
+  );
 
   return (
     <main className="page" ref={pageRef}>
-      <div className="page-intro">
-        <p className="eyebrow">Your table, remembered</p>
-        <h1>Order history.</h1>
-        <p>Find a favourite order and bring it back with one click.</p>
+      <div className="page-intro" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          <p className="eyebrow">Your table, remembered</p>
+          <h1>Order history.</h1>
+          <p>Find a favourite order, track delivery in real time, or export your records.</p>
+        </div>
+
+        {orders.length > 0 && (
+          <div>
+            <button
+              type="button"
+              className="button button-light"
+              onClick={handleExportCSV}
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+            >
+              <span>📥</span> Export History (CSV)
+            </button>
+          </div>
+        )}
       </div>
+
       {orders.length === 0 ? (
         <div className="state state-empty">
           <h2>No past orders yet</h2>
@@ -98,39 +134,73 @@ export default function OrdersPage() {
         <>
           {activeOrders.length > 0 && (
             <div style={{ marginBottom: "3rem" }}>
-              <h2 style={{ marginBottom: "1.5rem" }}>Active Orders</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1.5rem" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#16a34a", boxShadow: "0 0 0 4px rgba(22, 163, 74, 0.2)" }} />
+                <h2 style={{ margin: 0 }}>Active Deliveries</h2>
+              </div>
               <div className="admin-orders">
-                {activeOrders.map((order) => (
-                  <article className="admin-order" key={order.id} style={{ borderLeft: "4px solid var(--accent)", background: "var(--light-bg)" }}>
-                    <div className="admin-order-heading">
-                      <div>
-                        <strong>{order.id}</strong>
-                        <span>{new Date(order.createdAt).toLocaleString()}</span>
+                {activeOrders.map((order) => {
+                  const statusMeta = formatOrderStatus(order.status);
+                  return (
+                    <article
+                      className="admin-order"
+                      key={order.id}
+                      style={{
+                        borderLeft: `4px solid ${statusMeta.color}`,
+                        background: "var(--soft)",
+                        boxShadow: "0 4px 18px rgba(0,0,0,0.03)",
+                      }}
+                    >
+                      <div className="admin-order-heading">
+                        <div>
+                          <strong>{order.id}</strong>
+                          <span>{formatDateTime(order.createdAt)}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <span
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: "99px",
+                              fontSize: "11px",
+                              fontFamily: "var(--mono)",
+                              fontWeight: "700",
+                              background: statusMeta.bgColor,
+                              color: statusMeta.color,
+                            }}
+                          >
+                            {statusMeta.label}
+                          </span>
+                          <Link
+                            href={`/orders/${encodeURIComponent(order.id)}/track`}
+                            className="button button-dark"
+                            style={{ padding: "8px 14px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                          >
+                            <span>🛵</span> Track Live <span>↗</span>
+                          </Link>
+                        </div>
                       </div>
-                      <b style={{ color: "var(--accent)" }}>{order.status}</b>
-                    </div>
-                    <div className="admin-order-details">
-                      <div>
-                        <span>Items</span>
-                        <strong>
-                          {order.items
-                            .map(
-                              ({ dish, quantity }) => `${quantity} × ${dish.name}`
-                            )
-                            .join(", ")}
-                        </strong>
+
+                      <div className="admin-order-details">
+                        <div>
+                          <span>Items</span>
+                          <strong>
+                            {order.items
+                              .map(({ dish, quantity }) => `${quantity} × ${dish.name}`)
+                              .join(", ")}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Deliver to</span>
+                          <strong>{formatAddress(order.customer?.address)}</strong>
+                        </div>
+                        <div>
+                          <span>Total</span>
+                          <strong>{formatCurrency(order.total)}</strong>
+                        </div>
                       </div>
-                      <div>
-                        <span>Deliver to</span>
-                        <strong>{order.customer.address}</strong>
-                      </div>
-                      <div>
-                        <span>Total</span>
-                        <strong>{order.total} ETB</strong>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -139,44 +209,70 @@ export default function OrdersPage() {
             <div>
               <h2 style={{ marginBottom: "1.5rem" }}>Past Orders</h2>
               <div className="admin-orders">
-                {pastOrders.map((order) => (
-                  <article className="admin-order" key={order.id}>
-                    <div className="admin-order-heading">
-                      <div>
-                        <strong>{order.id}</strong>
-                        <span>{new Date(order.createdAt).toLocaleString()}</span>
+                {pastOrders.map((order) => {
+                  const statusMeta = formatOrderStatus(order.status);
+                  return (
+                    <article className="admin-order" key={order.id}>
+                      <div className="admin-order-heading">
+                        <div>
+                          <strong>{order.id}</strong>
+                          <span>{formatDateTime(order.createdAt)}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <span
+                            style={{
+                              padding: "3px 8px",
+                              borderRadius: "99px",
+                              fontSize: "11px",
+                              fontFamily: "var(--mono)",
+                              background: statusMeta.bgColor,
+                              color: statusMeta.color,
+                            }}
+                          >
+                            {statusMeta.label}
+                          </span>
+                          <Link
+                            href={`/orders/${encodeURIComponent(order.id)}/track`}
+                            className="button button-light"
+                            style={{ padding: "6px 12px", fontSize: "11px" }}
+                          >
+                            View Map
+                          </Link>
+                        </div>
                       </div>
-                      <b>Delivered</b>
-                    </div>
-                    <div className="admin-order-details">
-                      <div>
-                        <span>Items</span>
-                        <strong>
-                          {order.items
-                            .map(
-                              ({ dish, quantity }) => `${quantity} × ${dish.name}`
-                            )
-                            .join(", ")}
-                        </strong>
+
+                      <div className="admin-order-details">
+                        <div>
+                          <span>Items</span>
+                          <strong>
+                            {order.items
+                              .map(({ dish, quantity }) => `${quantity} × ${dish.name}`)
+                              .join(", ")}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Deliver to</span>
+                          <strong>{formatAddress(order.customer?.address)}</strong>
+                        </div>
+                        <div>
+                          <span>Total</span>
+                          <strong>{formatCurrency(order.total)}</strong>
+                        </div>
                       </div>
-                      <div>
-                        <span>Deliver to</span>
-                        <strong>{order.customer.address}</strong>
+
+                      <div style={{ marginTop: "14px", display: "flex", gap: "10px" }}>
+                        <button
+                          className="button button-dark"
+                          type="button"
+                          onClick={() => reorder(order)}
+                          style={{ padding: "8px 16px", fontSize: "12px" }}
+                        >
+                          Reorder <span>+</span>
+                        </button>
                       </div>
-                      <div>
-                        <span>Total</span>
-                        <strong>{order.total} ETB</strong>
-                      </div>
-                    </div>
-                    <button
-                      className="button button-dark"
-                      type="button"
-                      onClick={() => reorder(order)}
-                    >
-                      Reorder <span>+</span>
-                    </button>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             </div>
           )}

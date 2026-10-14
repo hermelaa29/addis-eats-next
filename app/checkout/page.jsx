@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState(initialForm);
   const [touched, setTouched] = useState({});
   const [status, setStatus] = useState("idle");
+  const [createdOrderId, setCreatedOrderId] = useState(null);
 
   const pageRef = useRef(null);
 
@@ -89,7 +90,7 @@ export default function CheckoutPage() {
     setStatus("submitting");
     await new Promise((resolve) => setTimeout(resolve, 900));
 
-    addOrder({
+    const newOrder = addOrder({
       customer: {
         name: form.name.trim(),
         phone: form.phone,
@@ -101,6 +102,10 @@ export default function CheckoutPage() {
       deliveryFee,
       estimatedMinutes,
     });
+
+    if (newOrder?.id) {
+      setCreatedOrderId(newOrder.id);
+    }
 
     setStatus("success");
     clearCart();
@@ -114,12 +119,22 @@ export default function CheckoutPage() {
           <p className="eyebrow">Order received</p>
           <h1>Thank you, {form.name.split(" ")[0]}.</h1>
           <p>
-            Your order is being prepared with care. We will bring it to{" "}
+            Your order <strong>{createdOrderId ? `(${createdOrderId})` : ""}</strong> is being prepared with care. We will bring it to{" "}
             <strong>{form.address}</strong> soon.
           </p>
-          <Link className="button button-dark" href="/menu">
-            Order something else
-          </Link>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "24px" }}>
+            {createdOrderId && (
+              <Link className="button button-dark" href={`/orders/${encodeURIComponent(createdOrderId)}/track`}>
+                🛵 Track your delivery live <span>↗</span>
+              </Link>
+            )}
+            <Link className="button button-light" href="/orders">
+              View order history
+            </Link>
+            <Link className="text-button" href="/menu" style={{ textAlign: "center", marginTop: "8px" }}>
+              Order something else →
+            </Link>
+          </div>
         </div>
       </main>
     );

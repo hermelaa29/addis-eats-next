@@ -19,21 +19,27 @@ export default function AdminMenuPage() {
   useEffect(() => {
     if (!pageRef.current) return;
     const ctx = gsap.context(() => {
-      gsap.from(".admin-panel-heading > *, .admin-search", {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        ease: "power3.out",
-      });
-      gsap.from(".admin-row", {
-        y: 30,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.05,
-        ease: "power3.out",
-        delay: 0.2,
-      });
+      const headings = pageRef.current.querySelectorAll(".admin-panel-heading > *, .admin-search");
+      if (headings.length > 0) {
+        gsap.from(headings, {
+          y: 20,
+          opacity: 0,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: "power3.out",
+        });
+      }
+      const rows = pageRef.current.querySelectorAll(".admin-row");
+      if (rows.length > 0) {
+        gsap.from(rows, {
+          y: 30,
+          opacity: 0,
+          duration: 0.6,
+          stagger: 0.05,
+          ease: "power3.out",
+          delay: 0.2,
+        });
+      }
     }, pageRef);
     return () => ctx.revert();
   }, [dishes.length]);

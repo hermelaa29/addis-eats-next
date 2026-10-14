@@ -3,6 +3,8 @@ import MenuClient from "./MenuClient";
 import { Spinner } from "@/components/ui/States";
 import { fetchDishesServer } from "@/lib/server-dishes";
 
+export const revalidate = 86400; // Cache static page for 24 hours
+
 export const metadata = {
   title: "Menu",
   description: "Explore our Ethiopian dishes and familiar favourites.",

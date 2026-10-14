@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import gsap from "gsap";
 
 import { loginAction } from "@/app/actions/auth";
+import { validateRedirect } from "@/lib/utils";
 
 export default function LoginClient() {
   const user = useAuthStore((state) => state.user);
@@ -71,7 +72,8 @@ export default function LoginClient() {
     
     if (res.success) {
       const actuallyIsAdmin = signIn(form.name.trim(), form.email, form.password);
-      router.replace(actuallyIsAdmin ? "/admin" : returnTo);
+      const safeUrl = validateRedirect(returnTo, "/");
+      router.replace(actuallyIsAdmin ? "/admin" : safeUrl);
     } else {
       alert(res.error || "Login failed");
     }

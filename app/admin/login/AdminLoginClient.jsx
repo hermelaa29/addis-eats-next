@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAdminAuthStore } from "@/store/adminAuthStore";
 
 import { loginAction } from "@/app/actions/auth";
+import { validateRedirect } from "@/lib/utils";
 
 export default function AdminLoginClient() {
   const admin = useAdminAuthStore((state) => state.admin);
@@ -44,7 +45,10 @@ export default function AdminLoginClient() {
     }
     // Set client state
     signIn(form.email.trim(), form.password);
-    router.replace(returnTo);
+    
+    // Prevent Open Redirects
+    const safeUrl = validateRedirect(returnTo, "/admin");
+    router.replace(safeUrl);
   };
 
   return (

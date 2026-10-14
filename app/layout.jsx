@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Layout } from "@/components/Layout";
+import { AppSWRConfig } from "@/lib/swr-cache";
 import { DM_Serif_Display, Manrope, DM_Mono } from "next/font/google";
 
 const serif = DM_Serif_Display({
@@ -53,7 +54,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`${serif.variable} ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <Layout>{children}</Layout>
+        <AppSWRConfig>
+          <Layout>{children}</Layout>
+        </AppSWRConfig>
       </body>
     </html>
   );

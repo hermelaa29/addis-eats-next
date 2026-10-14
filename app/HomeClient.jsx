@@ -15,19 +15,28 @@ import useSWR from "swr";
 import { fetcher } from "@/lib/dishes";
 import { useAdminModifications } from "@/store/dishesStore";
 
-const LOOP_WORDS = ["Good energy.", "Great taste.", "Real food.", "Pure joy."];
+const LOOP_WORDS = ["Good energy.", "Great taste.", "delicious food.", "Pure joy."];
 
 export default function HomeClient({ fallbackData }) {
   const { data: baseDishes, error, isLoading } = useSWR('/menu-data.json', fetcher, { 
     fallbackData,
-    revalidateOnFocus: false 
+    revalidateOnMount: false, // Prevent mount-time network fetch
+    revalidateOnFocus: false,
+    revalidateIfStale: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 1000 * 60 * 60 * 24,
   });
   
   const mods = useAdminModifications();
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (fallbackData && Array.isArray(fallbackData) && fallbackData.length > 0) {
+      try {
+        localStorage.setItem("addis-eats-cache:/menu-data.json", JSON.stringify(fallbackData));
+      } catch {}
+    }
+  }, [fallbackData]);
 
   const data = useMemo(() => {
     if (!baseDishes) return [];
