@@ -38,7 +38,7 @@ const OrderMap = dynamic(() => import("@/components/tracking/OrderMap"), {
     >
       <div className="spinner" />
       <span style={{ fontFamily: "var(--mono)", fontSize: "12px", color: "var(--muted)" }}>
-        Loading satellite map of Addis Ababa...
+        Loading Google Maps live tracking...
       </span>
     </div>
   ),

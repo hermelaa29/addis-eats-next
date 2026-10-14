@@ -16,6 +16,8 @@ export default function OrderMap({
   const mapInstanceRef = useRef(null);
   const courierMarkerRef = useRef(null);
   const routeLineRef = useRef(null);
+  const tileLayerRef = useRef(null);
+  const [mapStyle, setMapStyle] = useState("roadmap"); // 'roadmap' | 'hybrid'
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
@@ -43,12 +45,19 @@ export default function OrderMap({
       // Add Zoom Control at bottom right
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      // Warm, elegant CartoDB Positron / OSM tiles
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: "abcd",
-        maxZoom: 19,
-      }).addTo(map);
+      // Free Google Maps tiles (No API key required)
+      const googleTileLayer = L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+        subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        maxZoom: 20,
+        attribution: '&copy; <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">Google Maps</a>',
+      });
+      googleTileLayer.on("tileerror", (e) => {
+        if (e && e.tile && e.coords) {
+          e.tile.src = `https://tile.openstreetmap.org/${e.coords.z}/${e.coords.x}/${e.coords.y}.png`;
+        }
+      });
+      googleTileLayer.addTo(map);
+      tileLayerRef.current = googleTileLayer;
 
       // Custom SVG Icons
       const restaurantIcon = L.divIcon({
@@ -260,6 +269,30 @@ export default function OrderMap({
     }
   };
 
+  const handleToggleMapStyle = () => {
+    if (!mapInstanceRef.current || !tileLayerRef.current) return;
+    import("leaflet").then(({ default: L }) => {
+      const nextStyle = mapStyle === "roadmap" ? "hybrid" : "roadmap";
+      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      const lyrsCode = nextStyle === "hybrid" ? "y" : "m";
+      const newLayer = L.tileLayer(`https://{s}.google.com/vt/lyrs=${lyrsCode}&x={x}&y={y}&z={z}`, {
+        subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        maxZoom: 20,
+        attribution: '&copy; <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">Google Maps</a>',
+      });
+      newLayer.on("tileerror", (e) => {
+        if (e && e.tile && e.coords) {
+          e.tile.src = `https://tile.openstreetmap.org/${e.coords.z}/${e.coords.x}/${e.coords.y}.png`;
+        }
+      });
+      newLayer.addTo(mapInstanceRef.current);
+      tileLayerRef.current = newLayer;
+      setMapStyle(nextStyle);
+    });
+  };
+
+  const googleMapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${restaurantLocation.lat},${restaurantLocation.lng}&destination=${deliveryLocation.lat},${deliveryLocation.lng}`;
+
   return (
     <div className="order-map-wrapper" style={{ position: "relative", width: "100%", height: "460px", borderRadius: "20px", overflow: "hidden", border: "1px solid var(--line)", boxShadow: "0 10px 30px rgba(0,0,0,0.06)" }}>
       <style jsx global>{`
@@ -283,12 +316,34 @@ export default function OrderMap({
       <div ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
 
       {/* Floating Map Controls */}
-      <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 1000, display: "flex", gap: "8px" }}>
+      <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 1000, display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "8px" }}>
+        <button
+          type="button"
+          onClick={handleToggleMapStyle}
+          title="Toggle Google Maps layer"
+          style={{
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid var(--line)",
+            color: "var(--ink)",
+            borderRadius: "10px",
+            padding: "8px 12px",
+            fontSize: "12px",
+            fontWeight: "600",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          }}
+        >
+          <span>{mapStyle === "roadmap" ? "🛰️ Google Satellite" : "🗺️ Google Roads"}</span>
+        </button>
         <button
           type="button"
           onClick={handleCenterOnCourier}
           style={{
-            background: "rgba(255, 255, 255, 0.92)",
+            background: "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(8px)",
             border: "1px solid var(--line)",
             color: "var(--ink)",
@@ -309,7 +364,7 @@ export default function OrderMap({
           type="button"
           onClick={handleFitAll}
           style={{
-            background: "rgba(255, 255, 255, 0.92)",
+            background: "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(8px)",
             border: "1px solid var(--line)",
             color: "var(--ink)",
@@ -324,8 +379,31 @@ export default function OrderMap({
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           }}
         >
-          <span>🗺️</span> View Whole Route
+          <span>🧭</span> Fit Route
         </button>
+        <a
+          href={googleMapsDirectionsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open complete route in Google Maps in a new tab"
+          style={{
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid var(--line)",
+            color: "var(--ink)",
+            borderRadius: "10px",
+            padding: "8px 12px",
+            fontSize: "12px",
+            fontWeight: "600",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            textDecoration: "none",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          }}
+        >
+          <span>📍 Google Maps App ↗</span>
+        </a>
       </div>
 
       {/* Live Indicator overlay badge */}
@@ -354,7 +432,7 @@ export default function OrderMap({
           boxShadow: "0 0 0 4px rgba(22, 163, 74, 0.2)",
           display: "inline-block",
         }} />
-        <span style={{ fontWeight: 600, color: "var(--ink)" }}>LIVE GPS TRACKING</span>
+        <span style={{ fontWeight: 600, color: "var(--ink)" }}>GOOGLE MAPS LIVE GPS</span>
         <span style={{ color: "var(--muted)" }}>· {formatCoordinates(courierLocation.lat, courierLocation.lng)}</span>
       </div>
     </div>

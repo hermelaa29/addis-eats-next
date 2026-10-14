@@ -89,27 +89,33 @@ export default function LoginClient() {
           the dashboard.
         </p>
         <div className="demo-credentials">
-          <p className="eyebrow" style={{ marginBottom: 8, opacity: 0.6 }}>Demo accounts</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <p>Demo accounts (One-click fill)</p>
+          <div className="demo-credentials-grid">
             <button
               type="button"
-              className="button button-outline"
-              style={{ fontSize: 13, padding: "6px 14px" }}
+              className="demo-credential-btn"
               onClick={() =>
                 setForm({ name: "Hana Bekele", email: "hana@example.com", password: "password123" })
               }
             >
-              👤 Customer — hana@example.com / password123
+              <span>👤</span>
+              <div>
+                <strong>Customer</strong>
+                <small>hana@example.com / password123</small>
+              </div>
             </button>
             <button
               type="button"
-              className="button button-outline"
-              style={{ fontSize: 13, padding: "6px 14px" }}
+              className="demo-credential-btn"
               onClick={() =>
                 setForm({ name: "Admin", email: "admin@gmail.com", password: "admin" })
               }
             >
-              🛠 Admin — admin@gmail.com / admin
+              <span>🛠️</span>
+              <div>
+                <strong>Admin</strong>
+                <small>admin@gmail.com / admin</small>
+              </div>
             </button>
           </div>
         </div>
